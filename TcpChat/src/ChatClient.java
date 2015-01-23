@@ -6,32 +6,41 @@ public class ChatClient {
 	static boolean THREAD_EXIT = false;
 
 	public static void main(String args[]) throws Exception {
+		Socket clientSocket = null;
+		BufferedReader inFromUser = new BufferedReader(new InputStreamReader(
+				System.in));
+		try {
+			System.out.println("Give me an IP Address: ");
+			String ip = inFromUser.readLine();
+			System.out.println("Give me a Port: ");
+			int port = Integer.parseInt(inFromUser.readLine());
+			clientSocket = new Socket(ip, port);
+			Runnable r = new ServerHandler(clientSocket);
+			Thread t = new Thread(r);
+			t.start();
+		} catch (Exception e) {
+			System.out.println("Error connecting to server");
+			THREAD_EXIT = true;
+		}
 
-		Socket clientSocket = new Socket("127.0.0.1", 9876);
-
-		Runnable r = new ServerHandler(clientSocket);
-		Thread t = new Thread(r);
-		t.start();
-
-		while (true) {
-
+		while (!THREAD_EXIT) {
 			DataOutputStream outToServer = new DataOutputStream(
 					clientSocket.getOutputStream());
 
-			BufferedReader inFromUser = new BufferedReader(
-					new InputStreamReader(System.in));
-
 			System.out.println("Enter a message: ");
 			String message = inFromUser.readLine();
-
-			outToServer.writeBytes(message + '\n');
+			try {
+				outToServer.writeBytes(message + '\n');
+			} catch (Exception e) {
+				System.out.println("Server Disconnected - Exiting Now");
+				THREAD_EXIT = true;
+			}
 
 			if (message.equalsIgnoreCase("/exit")) {
-				break;
+				THREAD_EXIT = true;
+				clientSocket.close();
 			}
 		}
-		THREAD_EXIT = true;
-		clientSocket.close();
 	}
 }
 
@@ -47,22 +56,23 @@ class ServerHandler implements Runnable {
 	public void run() {
 
 		while (!ChatClient.THREAD_EXIT) {
-
 			try {
-
 				BufferedReader inFromServer = new BufferedReader(
 						new InputStreamReader(listenSocket.getInputStream()));
-
 				String serverMessage = inFromServer.readLine();
-				System.out.println(serverMessage);
+				if (serverMessage == null)
+					ChatClient.THREAD_EXIT = true;
+				else
+					System.out.println(serverMessage);
 			} catch (IOException e) {
-				System.out.println("Error getting message from server");
 			}
 		}
+		// Close the server listener socket
 		try {
 			listenSocket.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.out
+					.println("Failed to close connection. Guess you're screwed.");
 		}
 	}
 

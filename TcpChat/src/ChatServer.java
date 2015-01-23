@@ -5,7 +5,6 @@ import java.util.*;
 class ChatServer {
 
 	public static void main(String argv[]) throws Exception {
-
 		ServerSocket listenSocket = new ServerSocket(9876);
 
 		while (true) {
@@ -30,7 +29,6 @@ class ClientHandler implements Runnable {
 	}
 
 	public void run() {
-
 		ip = connectionSocket.getInetAddress().toString();
 		port = connectionSocket.getPort();
 		System.out.println("Client @" + ip + ":" + port + " connected");
@@ -41,13 +39,8 @@ class ClientHandler implements Runnable {
 			try {
 				inFromClient = new BufferedReader(new InputStreamReader(
 						connectionSocket.getInputStream()));
-
-				// Convert this to read and get length of stream before reading
 				clientMessage = inFromClient.readLine();
 
-				System.out.println("The client said: " + clientMessage);
-
-				// Getting string correctly, comparison is wrong
 				if (clientMessage.equalsIgnoreCase("/exit")) {
 					break;
 				}
@@ -59,7 +52,7 @@ class ClientHandler implements Runnable {
 		}
 
 		try {
-			System.out.println("Client @" + ip + ":" + port + " disconnected");
+			System.out.println("Client @ " + ip + ":" + port + " disconnected");
 			connectionSocket.close();
 			dispatcher.removeClientFromPool(connectionSocket);
 		} catch (IOException e) {

@@ -1,0 +1,80 @@
+import java.io.*;
+import java.net.*;
+
+public class ChatClient {
+
+	static boolean THREAD_EXIT = false;
+
+	public static void main(String args[]) throws Exception {
+		Socket clientSocket = null;
+		try {
+			clientSocket = new Socket("127.0.0.1", 9876);
+			Runnable r = new ServerHandler(clientSocket);
+			Thread t = new Thread(r);
+			t.start();
+		} catch (Exception e) {
+			System.out.println("Error connecting to server");
+			THREAD_EXIT = true;
+		}
+
+		while (!THREAD_EXIT) {
+			DataOutputStream outToServer = new DataOutputStream(
+					clientSocket.getOutputStream());
+			BufferedReader inFromUser = new BufferedReader(
+					new InputStreamReader(System.in));
+
+			System.out.println("Enter a message: ");
+			String message = inFromUser.readLine();
+			try {
+				outToServer.writeBytes(message + '\n');
+			} catch (Exception e) {
+				THREAD_EXIT = true;
+			}
+
+			if (message.equalsIgnoreCase("/exit")) {
+				THREAD_EXIT = true;
+				clientSocket.close();
+			}
+		}
+	}
+
+	public static void exit() {
+		THREAD_EXIT = true;
+		ChatClient.finish();
+	}
+}
+
+class ServerHandler implements Runnable {
+
+	Socket listenSocket;
+
+	ServerHandler(Socket connection) {
+		listenSocket = connection;
+	}
+
+	@Override
+	public void run() {
+
+		while (!ChatClient.THREAD_EXIT) {
+			try {
+				BufferedReader inFromServer = new BufferedReader(
+						new InputStreamReader(listenSocket.getInputStream()));
+				String serverMessage = inFromServer.readLine();
+				if (serverMessage == null || serverMessage == "null") {
+					ChatClient.THREAD_EXIT = true;
+				}
+				System.out.println(serverMessage);
+			} catch (IOException e) {
+			}
+		}
+		// Close the server listener socket
+		try {
+			System.out.println("Exiting Server Handler");
+			listenSocket.close();
+		} catch (IOException e) {
+			System.out
+					.println("Failed to close connection. Guess you're screwed.");
+		}
+	}
+
+}

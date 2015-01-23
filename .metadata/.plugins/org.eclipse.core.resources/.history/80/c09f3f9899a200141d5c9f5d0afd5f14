@@ -1,0 +1,66 @@
+import java.io.*;
+import java.net.*;
+
+public class ChatClient {
+
+	static boolean THREAD_EXIT = false;
+
+	public void main(String args[]) throws Exception {
+
+		Socket clientSocket = new Socket("127.0.0.1", 9876);
+		Runnable r = new ServerHandler(clientSocket,  this);
+		Thread t = new Thread(r);
+		t.start();
+
+		while (!THREAD_EXIT) {
+			DataOutputStream outToServer = new DataOutputStream(
+					clientSocket.getOutputStream());
+			BufferedReader inFromUser = new BufferedReader(
+					new InputStreamReader(System.in));
+
+			System.out.println("Enter a message: ");
+			String message = inFromUser.readLine();
+
+			outToServer.writeBytes(message + '\n');
+
+			if (message.equalsIgnoreCase("/exit"))
+				THREAD_EXIT = true;
+		}
+		clientSocket.close();
+	}
+}
+
+class ServerHandler implements Runnable {
+
+	Socket listenSocket;
+
+	ServerHandler(Socket connection, ChatClient &chatclient) {
+		listenSocket = connection;
+	}
+
+	@Override
+	public void run() {
+
+		while (!ChatClient.THREAD_EXIT) {
+			try {
+				BufferedReader inFromServer = new BufferedReader(
+						new InputStreamReader(listenSocket.getInputStream()));
+				String serverMessage = inFromServer.readLine();
+				if (serverMessage == null) {
+					chatclient.THREAD_EXIT = true;
+					//break;
+				}
+				System.out.println(serverMessage);
+			} catch (IOException e) {
+			}
+		}
+		// Close the server listener socket
+		try {
+			listenSocket.close();
+		} catch (IOException e) {
+			System.out
+					.println("Failed to close connection. Guess you're screwed.");
+		}
+	}
+
+}
