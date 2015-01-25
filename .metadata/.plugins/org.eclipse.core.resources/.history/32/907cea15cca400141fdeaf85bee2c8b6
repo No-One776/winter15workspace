@@ -1,0 +1,25 @@
+/*
+ ============================================================================
+ Name        : IPC.c
+ Author      : Justin Rohr & Kalee Stutzman
+ Description :
+ ============================================================================
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+
+int main(void) {
+	pid_t pid;
+
+
+	pid = fork();
+
+	if (pid < 0){
+		perror("Fork failed");
+		exit(errno);
+	}
+
+	return EXIT_SUCCESS;
+}
