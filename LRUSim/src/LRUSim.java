@@ -12,7 +12,7 @@ public class LRUSim {
 	private static BufferedReader fileToRead;
 	private static final int numProcesses = 6;
 	private static final int physicalMemSize = 16;
-	private static int pageFaults = 0; // , nonPageFaults = 0;
+	private static int[] pageFaults = new int[numProcesses];
 	private static int[] nonPageFaults = new int[numProcesses];
 	private static Records[] processInfo = new Records[numProcesses];
 	private static PageTable[] pageTable = new PageTable[numProcesses];
@@ -37,16 +37,38 @@ public class LRUSim {
 		} catch (IOException e) {
 			System.out.println("Error reading file");
 		}
-		System.out.println("Total Page Faults: " + pageFaults);
-		for (int x = 0; x < numProcesses; x++)
-			System.out.println("Total Non-Page Faults for P" + x + " = "
-					+ nonPageFaults[x]);
-		for (int x = 1; x < numProcesses; x++)
-			System.out.println("Process #" + x + "\tTotal Page Size: "
+		printStatus(-1);
+		for (int x = 1; x < numProcesses; x++) {
+			System.out.print("Process #" + x + " Total Page Size: "
 					+ processInfo[x].totalPages + "\tTotal Memory References: "
 					+ processInfo[x].memRefs);
+			System.out.print("\tTotal Page Faults for P" + x + ": "
+					+ pageFaults[x]);
+			System.out.println("\tTotal Non-Page Faults for P" + x + ": "
+					+ nonPageFaults[x]);
+		}
 	}
 
+	// Print the Page Table of id, if -1, all and the Page Frame Table
+	private static void printStatus(int id) {
+		System.out.println("Page Tables");
+		for (int x = 1; x < numProcesses; x++) {
+			if (id == x || id == -1) {
+				System.out.println("Process " + x + ":\nPage Frame");
+				for (int y = 0; y < physicalMemSize; y++)
+					if (pageTable[x].pagesFrame[y] != -1)
+						System.out.println(y + "\t"
+								+ pageTable[x].pagesFrame[y]);
+			}
+		}
+		System.out.println("Page Frame Table\nFrame# ProcID Page#");
+		for (int x = 0; x < physicalMemSize; x++)
+			if (frameTable[x].procId != -1)
+				System.out.println(x + "\t" + frameTable[x].procId + "\t"
+						+ frameTable[x].pageRef);
+	}
+
+	// Initialize the file reader and arrays for use
 	private static void initialize(String fileName) {
 		try { // Create Readers
 			FileReader file = new FileReader(fileName);
@@ -73,6 +95,7 @@ public class LRUSim {
 		processInfo[pID].memRefs++;
 	}
 
+	// Parse the string into the int id and the page reference number
 	private static void parseData(String in) {
 		String[] parts = in.split(":");
 		pageRef = Integer.parseInt(parts[1].substring(1), 2);
@@ -80,6 +103,7 @@ public class LRUSim {
 		pID = Integer.parseInt(parts[1]);
 	}
 
+	// Algorithm to find a free frame to put a frame or clear one to use
 	private static void lruImplementation() {
 		if (pageTable[pID].pagesFrame[pageRef] != -1) { // Already Paged
 			frameTable[pageTable[pID].pagesFrame[pageRef]].recentlyUsed = true;
@@ -94,24 +118,27 @@ public class LRUSim {
 					pageTable[frameTable[framePointer].procId].pagesFrame[frameTable[framePointer].pageRef] = -1;
 					updatePageFrameTable(framePointer);
 					notPlaced = false;
-				} else if (frameTable[framePointer].recentlyUsed) {
-					System.out.println("Clearing Recently Used #"
-							+ framePointer);
+					System.out
+							.println("No free frames, replacing physical page at: "
+									+ framePointer);
+				} else if (frameTable[framePointer].recentlyUsed)
 					frameTable[framePointer].recentlyUsed = false;
-				}
 				framePointer++;
 				if (framePointer == physicalMemSize)
 					framePointer = 0;
 			}
+			printStatus(pID);
+
 		}
 	}
 
+	// Takes the given spot and updates the frame table & process page table
 	private static void updatePageFrameTable(int pointer) {
 		frameTable[pointer].procId = pID;
 		frameTable[pointer].pageRef = pageRef;
 		frameTable[pointer].recentlyUsed = true;
 		pageTable[pID].pagesFrame[pageRef] = pointer;
-		pageFaults++;
+		pageFaults[pID]++;
 	}
 }
 
