@@ -1,0 +1,86 @@
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import com.jgoodies.forms.factories.DefaultComponentFactory;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.JTextArea;
+
+public class LRUSimGUI {
+
+	private JFrame mainFrame;
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					LRUSimGUI window = new LRUSimGUI();
+					window.mainFrame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the application.
+	 */
+	public LRUSimGUI() {
+		initialize();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize() {
+		mainFrame = new JFrame();
+		mainFrame.setBounds(100, 100, 700, 550);
+		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		JPanel buttonPanel = new JPanel();
+		mainFrame.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+
+		JButton btnNext = new JButton("Run Next");
+		btnNext.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// TODO: Run Next Line
+			}
+		});
+		buttonPanel.add(btnNext);
+
+		JButton btnNextFault = new JButton("Run to Next Fault");
+		btnNextFault.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				// TODO: Run code to next fault
+			}
+		});
+		buttonPanel.add(btnNextFault);
+
+		JButton btnRunToEnd = new JButton("Run to End");
+		btnRunToEnd.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// TODO: Run to the end of the program
+			}
+		});
+		buttonPanel.add(btnRunToEnd);
+		
+		JPanel panel = new JPanel();
+		mainFrame.getContentPane().add(panel, BorderLayout.NORTH);
+		
+		JLabel lblProcessAccessing = new JLabel("Process #" + LRUSim.pID " accessing Page #");
+		panel.add(lblProcessAccessing);
+		
+		JTextArea displayProcessInfoTextArea = new JTextArea();
+		displayProcessInfoTextArea.setEditable(false);
+		panel.add(displayProcessInfoTextArea);
+	}
+
+}

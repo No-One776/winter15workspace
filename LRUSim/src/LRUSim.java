@@ -19,6 +19,14 @@ public class LRUSim {
 	private static PageFrameTable[] frameTable = new PageFrameTable[physicalMemSize];
 	private static int framePointer = 0, pID = 0, pageRef = 0;
 
+	public static int getpID() {
+		return pID;
+	}
+
+	public static int getPageRef() {
+		return pageRef;
+	}
+
 	public static void main(String[] args) {
 		if (args.length > 0)
 			initialize(args[0]);
