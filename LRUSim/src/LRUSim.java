@@ -9,36 +9,71 @@ import java.io.IOException;
  *               implement virtual memory.
  */
 public class LRUSim {
-	private static BufferedReader fileToRead;
-	private static final int numProcesses = 6;
-	private static final int physicalMemSize = 16;
-	private static int[] pageFaults = new int[numProcesses];
-	private static int[] nonPageFaults = new int[numProcesses];
-	private static Records[] processInfo = new Records[numProcesses];
-	private static PageTable[] pageTable = new PageTable[numProcesses];
-	private static PageFrameTable[] frameTable = new PageFrameTable[physicalMemSize];
-	private static int framePointer = 0, pID = 0, pageRef = 0;
+	private BufferedReader fileToRead;
+	private final int numProcesses = 6;
+	private final int physicalMemSize = 16;
+	private int[] pageFaults = new int[numProcesses];
+	private int[] nonPageFaults = new int[numProcesses];
+	private Records[] processInfo = new Records[numProcesses];
+	private PageTable[] pageTable = new PageTable[numProcesses];
+	private PageFrameTable[] frameTable = new PageFrameTable[physicalMemSize];
+	private int framePointer = 0, pID = 0, pageRef = 0;
+	private boolean faulted = false;
 
-	public static int getpID() {
+	public LRUSim(String string) {
+		initialize(string);
+	}
+
+	public int getpID() {
 		return pID;
 	}
 
-	public static int getPageRef() {
+	public int getPageRef() {
 		return pageRef;
 	}
 
-	public static void main(String[] args) {
-		if (args.length > 0)
-			initialize(args[0]);
-		else {
-			System.err.println("Need a file argument");
-			System.exit(0);
+	public void runNextLine() {
+		String in = null;
+		try {
+			in = fileToRead.readLine();
+		} catch (IOException e) {
+			System.out.println("Error reading file");
 		}
+		if (in != null) {
+			parseData(in);
+			storeRecords();
+			lruImplementation();
+		}
+	}
+
+	public void runTillNextFault() {
+		faulted = false;
+		String in = null;
+		while (!faulted) { // While not faulted, read new lines
+			try {
+				in = fileToRead.readLine();
+			} catch (IOException e) {
+				System.out.println("Error reading file");
+			}
+			if (in != null) {
+				parseData(in);
+				storeRecords();
+				lruImplementation();
+			}
+		}
+	}
+
+	public void runTillEnd() {
+		// if (args.length > 0)
+		// initialize(args[0]);
+		// else {
+		// System.err.println("Need a file argument");
+		// System.exit(0);
+		// }
 		String in;
 		try {
 			while ((in = fileToRead.readLine()) != null) {
 				parseData(in);
-				System.out.println("P" + pID + " accessing page #" + pageRef);
 				storeRecords();
 				lruImplementation();
 			}
@@ -58,7 +93,7 @@ public class LRUSim {
 	}
 
 	// Print the Page Table of id, if -1, all and the Page Frame Table
-	private static void printStatus(int id) {
+	private void printStatus(int id) {
 		System.out.println("Page Tables");
 		for (int x = 1; x < numProcesses; x++) {
 			if (id == x || id == -1) {
@@ -77,7 +112,7 @@ public class LRUSim {
 	}
 
 	// Initialize the file reader and arrays for use
-	private static void initialize(String fileName) {
+	private void initialize(String fileName) {
 		try { // Create Readers
 			FileReader file = new FileReader(fileName);
 			fileToRead = new BufferedReader(file);
@@ -97,14 +132,15 @@ public class LRUSim {
 	}
 
 	// Update the record information for the overall simulation statistics
-	private static void storeRecords() {
+	private void storeRecords() {
+		System.out.println("P" + pID + " accessing page #" + pageRef);
 		if (pageRef >= processInfo[pID].totalPages)
 			processInfo[pID].totalPages = pageRef + 1;
 		processInfo[pID].memRefs++;
 	}
 
 	// Parse the string into the int id and the page reference number
-	private static void parseData(String in) {
+	private void parseData(String in) {
 		String[] parts = in.split(":");
 		pageRef = Integer.parseInt(parts[1].substring(1), 2);
 		parts = parts[0].split("P");
@@ -112,11 +148,11 @@ public class LRUSim {
 	}
 
 	// Algorithm to find a free frame to put a frame or clear one to use
-	private static void lruImplementation() {
+	private void lruImplementation() {
 		if (pageTable[pID].pagesFrame[pageRef] != -1) { // Already Paged
 			frameTable[pageTable[pID].pagesFrame[pageRef]].recentlyUsed = true;
 			nonPageFaults[pID]++;
-		} else { // If there are free frames, just add it, else loop
+		} else { // Not already paged, find a spot to place it
 			boolean notPlaced = true;
 			while (notPlaced) {
 				if (frameTable[framePointer].procId == -1) {
@@ -141,7 +177,8 @@ public class LRUSim {
 	}
 
 	// Takes the given spot and updates the frame table & process page table
-	private static void updatePageFrameTable(int pointer) {
+	private void updatePageFrameTable(int pointer) {
+		faulted = true;
 		frameTable[pointer].procId = pID;
 		frameTable[pointer].pageRef = pageRef;
 		frameTable[pointer].recentlyUsed = true;

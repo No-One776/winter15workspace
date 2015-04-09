@@ -16,6 +16,8 @@ public class LRUSimGUI {
 
 	private JFrame mainFrame;
 	private JTable table;
+	private JLabel lblProcessAccessing, lblProcess;
+	private LRUSim sim = new LRUSim("input.txt");
 
 	/**
 	 * Launch the application.
@@ -40,6 +42,13 @@ public class LRUSimGUI {
 		initialize();
 	}
 
+	// TODO: have this update the display fully
+	public void updateDisplay() {
+		lblProcessAccessing.setText("Process #" + sim.getpID()
+				+ " accessing the new Page #" + sim.getPageRef());
+		lblProcess.setText("Process #" + sim.getpID() + "'s Page Table");
+	}
+
 	/**
 	 * Initialize the contents of the frame.
 	 */
@@ -54,7 +63,8 @@ public class LRUSimGUI {
 		JButton btnNext = new JButton("Run Next");
 		btnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO: Run Next Line
+				sim.runNextLine();
+				updateDisplay();
 			}
 		});
 		buttonPanel.add(btnNext);
@@ -62,7 +72,8 @@ public class LRUSimGUI {
 		JButton btnNextFault = new JButton("Run to Next Fault");
 		btnNextFault.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				// TODO: Run code to next fault
+				sim.runTillNextFault();
+				updateDisplay();
 			}
 		});
 		buttonPanel.add(btnNextFault);
@@ -70,7 +81,8 @@ public class LRUSimGUI {
 		JButton btnRunToEnd = new JButton("Run to End");
 		btnRunToEnd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// TODO: Run to the end of the program
+				sim.runTillEnd();
+				updateDisplay();
 			}
 		});
 		buttonPanel.add(btnRunToEnd);
@@ -79,8 +91,8 @@ public class LRUSimGUI {
 		JPanel panel = new JPanel();
 		mainFrame.getContentPane().add(panel, BorderLayout.NORTH);
 
-		JLabel lblProcessAccessing = new JLabel("Process #" + LRUSim.getpID()
-				+ " accessing Page #" + LRUSim.getPageRef());
+		lblProcessAccessing = new JLabel("Process #" + sim.getpID()
+				+ " accessing Page #" + sim.getPageRef());
 		panel.add(lblProcessAccessing);
 
 		JPanel panel_3 = new JPanel();
@@ -90,8 +102,7 @@ public class LRUSimGUI {
 				ColumnSpec.decode("182px"), }, new RowSpec[] { RowSpec
 				.decode("455px"), }));
 
-		JLabel lblProcess = new JLabel("Process #" + LRUSim.getpID()
-				+ "'s Page Table");
+		lblProcess = new JLabel("Process #" + sim.getpID() + "'s Page Table");
 		panel_3.add(lblProcess, "1, 1, fill, center");
 
 		JLabel lblPhysicalMemory = new JLabel("Physical Memory");
