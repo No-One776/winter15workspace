@@ -10,14 +10,21 @@ import java.io.IOException;
  */
 public class LRUSim {
 	private BufferedReader fileToRead;
-	private final int numProcesses = 6;
-	private final int physicalMemSize = 16;
-	private int[] pageFaults = new int[numProcesses];
-	private int[] nonPageFaults = new int[numProcesses];
+	private final int numProcesses = 6, physicalMemSize = 16;
 	private Records[] processInfo = new Records[numProcesses];
 	private PageTable[] pageTable = new PageTable[numProcesses];
 	private PageFrameTable[] frameTable = new PageFrameTable[physicalMemSize];
-	private int framePointer = 0, pID = 0, pageRef = 0;
+	private int framePointer = 0, pID = 0, pageRef = 0, victimPID = -1,
+			victimRef = -1;
+
+	public int getVictimPID() {
+		return victimPID;
+	}
+
+	public int getVictimRef() {
+		return victimRef;
+	}
+
 	private boolean faulted = false;
 
 	public LRUSim(String string) {
@@ -64,12 +71,6 @@ public class LRUSim {
 	}
 
 	public void runTillEnd() {
-		// if (args.length > 0)
-		// initialize(args[0]);
-		// else {
-		// System.err.println("Need a file argument");
-		// System.exit(0);
-		// }
 		String in;
 		try {
 			while ((in = fileToRead.readLine()) != null) {
@@ -86,9 +87,9 @@ public class LRUSim {
 					+ processInfo[x].totalPages + "\tTotal Memory References: "
 					+ processInfo[x].memRefs);
 			System.out.print("\tTotal Page Faults for P" + x + ": "
-					+ pageFaults[x]);
+					+ processInfo[x].pageFaults);
 			System.out.println("\tTotal Non-Page Faults for P" + x + ": "
-					+ nonPageFaults[x]);
+					+ processInfo[x].nonPageFaults);
 		}
 	}
 
@@ -131,6 +132,18 @@ public class LRUSim {
 		}
 	}
 
+	public Records[] getProcessInfo() {
+		return processInfo;
+	}
+
+	public PageTable[] getPageTable() {
+		return pageTable;
+	}
+
+	public PageFrameTable[] getFrameTable() {
+		return frameTable;
+	}
+
 	// Update the record information for the overall simulation statistics
 	private void storeRecords() {
 		System.out.println("P" + pID + " accessing page #" + pageRef);
@@ -151,7 +164,9 @@ public class LRUSim {
 	private void lruImplementation() {
 		if (pageTable[pID].pagesFrame[pageRef] != -1) { // Already Paged
 			frameTable[pageTable[pID].pagesFrame[pageRef]].recentlyUsed = true;
-			nonPageFaults[pID]++;
+			processInfo[pID].nonPageFaults++;
+			victimPID = -1;
+			victimRef = -1;
 		} else { // Not already paged, find a spot to place it
 			boolean notPlaced = true;
 			while (notPlaced) {
@@ -179,11 +194,13 @@ public class LRUSim {
 	// Takes the given spot and updates the frame table & process page table
 	private void updatePageFrameTable(int pointer) {
 		faulted = true;
+		victimPID = frameTable[pointer].procId;
+		victimRef = frameTable[pointer].pageRef;
 		frameTable[pointer].procId = pID;
 		frameTable[pointer].pageRef = pageRef;
 		frameTable[pointer].recentlyUsed = true;
 		pageTable[pID].pagesFrame[pageRef] = pointer;
-		pageFaults[pID]++;
+		processInfo[pID].pageFaults++;
 	}
 }
 
@@ -191,6 +208,8 @@ class Records {
 	// If the pages number is greater than or equal this, make this pageNum + 1;
 	public int totalPages = 0;
 	public int memRefs = 0;
+	public int pageFaults = 0;
+	public int nonPageFaults = 0;
 }
 
 class PageTable {
