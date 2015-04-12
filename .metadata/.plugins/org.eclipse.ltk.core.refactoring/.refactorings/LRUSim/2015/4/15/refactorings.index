@@ -1,1 +1,3 @@
 1428605937473	Rename field 'table'
+1428777320588	Encapsulate field 'done'
+1428781160126	Rename local variable 'string'

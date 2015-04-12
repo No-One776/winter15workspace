@@ -4,42 +4,57 @@ import java.io.FileReader;
 import java.io.IOException;
 
 /**
+ * A simulation system that uses memory management and page replacement to
+ * implement virtual memory with demand paging page replacement.
+ * 
  * @author rohrj
- * @description: A system that uses memory management and page replacement to
- *               implement virtual memory.
+ * @version 1.0
  */
 public class LRUSim {
-	private BufferedReader fileToRead;
-	private final int numProcesses = 6, physicalMemSize = 16;
-	private Records[] processInfo = new Records[numProcesses];
-	private PageTable[] pageTable = new PageTable[numProcesses];
-	private PageFrameTable[] frameTable = new PageFrameTable[physicalMemSize];
-	private int framePointer = 0, pID = 0, pageRef = 0, victimPID = -1,
-			victimRef = -1;
+	private static BufferedReader fileToRead;
+	private final static int numProcesses = 6;
+	private final static int physicalMemSize = 16;
+	private static Records[] processInfo = new Records[numProcesses];
+	private static PageTable[] pageTable = new PageTable[numProcesses];
+	private static PageFrameTable[] frameTable = new PageFrameTable[physicalMemSize];
+	private static int framePointer = 0;
+	private static int pID = 0;
+	private static int pageRef = 0;
+	private static int victimPID = -1;
+	private static int victimRef = -1;
+	private static boolean faulted = false;
+	private static boolean done = false;
 
-	public int getVictimPID() {
-		return victimPID;
+	/**
+	 * Constructor that initializes the program with the given String fileName
+	 * for the program to read input from.
+	 * 
+	 * @param fileName
+	 *            The name of the file to read from.
+	 */
+	public LRUSim(String fileName) {
+		initialize(fileName);
 	}
 
-	public int getVictimRef() {
-		return victimRef;
+	/**
+	 * This allows the program to be run in a terminal and have a text display.
+	 * 
+	 * @param args
+	 *            The file for the program to read input from.
+	 */
+	public static void main(String[] args) {
+		if (args.length > 0)
+			initialize(args[0]);
+		runTillEnd();
+		printStatus(-1);
+		printStats();
 	}
 
-	private boolean faulted = false;
-
-	public LRUSim(String string) {
-		initialize(string);
-	}
-
-	public int getpID() {
-		return pID;
-	}
-
-	public int getPageRef() {
-		return pageRef;
-	}
-
-	public void runNextLine() {
+	/**
+	 * Method to be invoked to run the next line of the simulation from the text
+	 * file and update necessary information for displaying or printing.
+	 */
+	public static void runNextLine() {
 		String in = null;
 		try {
 			in = fileToRead.readLine();
@@ -50,38 +65,37 @@ public class LRUSim {
 			parseData(in);
 			storeRecords();
 			lruImplementation();
-		}
+		} else
+			done = true;
 	}
 
+	/**
+	 * Method to be invoked to run through more lines in the simulation until a
+	 * fault happens.
+	 */
 	public void runTillNextFault() {
 		faulted = false;
-		String in = null;
-		while (!faulted) { // While not faulted, read new lines
-			try {
-				in = fileToRead.readLine();
-			} catch (IOException e) {
-				System.out.println("Error reading file");
-			}
-			if (in != null) {
-				parseData(in);
-				storeRecords();
-				lruImplementation();
-			}
-		}
+		while (!faulted)
+			// While not faulted, read new lines
+			runNextLine();
+
 	}
 
-	public void runTillEnd() {
-		String in;
-		try {
-			while ((in = fileToRead.readLine()) != null) {
-				parseData(in);
-				storeRecords();
-				lruImplementation();
-			}
-		} catch (IOException e) {
-			System.out.println("Error reading file");
-		}
-		printStatus(-1);
+	/**
+	 * Method to be invoked to read through the file until the simulation is
+	 * done (reached EOF).
+	 */
+	public static void runTillEnd() {
+		while (!done)
+			runNextLine();
+	}
+
+	/**
+	 * Prints the statistics for all the processes simulation run information.
+	 * This includes the total pages per process, the number of memory
+	 * references, the amount of page faults, and the amount of non page faults.
+	 */
+	private static void printStats() {
 		for (int x = 1; x < numProcesses; x++) {
 			System.out.print("Process #" + x + " Total Page Size: "
 					+ processInfo[x].totalPages + "\tTotal Memory References: "
@@ -91,10 +105,17 @@ public class LRUSim {
 			System.out.println("\tTotal Non-Page Faults for P" + x + ": "
 					+ processInfo[x].nonPageFaults);
 		}
+
 	}
 
-	// Print the Page Table of id, if -1, all and the Page Frame Table
-	private void printStatus(int id) {
+	/**
+	 * Print the Page Table of the input id, if it's -1, then print all and the
+	 * Page Frame Table (Physical Memory)
+	 * 
+	 * @param id
+	 *            The Process page table to print
+	 */
+	private static void printStatus(int id) {
 		System.out.println("Page Tables");
 		for (int x = 1; x < numProcesses; x++) {
 			if (id == x || id == -1) {
@@ -112,8 +133,13 @@ public class LRUSim {
 						+ frameTable[x].pageRef);
 	}
 
-	// Initialize the file reader and arrays for use
-	private void initialize(String fileName) {
+	/**
+	 * Initialize the FileReader and the data arrays for use.
+	 * 
+	 * @param fileName
+	 *            The file name to read from
+	 */
+	private static void initialize(String fileName) {
 		try { // Create Readers
 			FileReader file = new FileReader(fileName);
 			fileToRead = new BufferedReader(file);
@@ -132,36 +158,42 @@ public class LRUSim {
 		}
 	}
 
-	public Records[] getProcessInfo() {
-		return processInfo;
-	}
-
-	public PageTable[] getPageTable() {
-		return pageTable;
-	}
-
-	public PageFrameTable[] getFrameTable() {
-		return frameTable;
-	}
-
-	// Update the record information for the overall simulation statistics
-	private void storeRecords() {
+	/**
+	 * Update the record information for the overall simulation statistics of a
+	 * processes total page size and the number of memory references.
+	 */
+	private static void storeRecords() {
 		System.out.println("P" + pID + " accessing page #" + pageRef);
 		if (pageRef >= processInfo[pID].totalPages)
 			processInfo[pID].totalPages = pageRef + 1;
 		processInfo[pID].memRefs++;
 	}
 
-	// Parse the string into the int id and the page reference number
-	private void parseData(String in) {
+	/**
+	 * Parses the given string into the Process ID and the Page the process is
+	 * referencing.
+	 * 
+	 * @param in
+	 *            String data to parse
+	 */
+	private static void parseData(String in) {
 		String[] parts = in.split(":");
 		pageRef = Integer.parseInt(parts[1].substring(1), 2);
 		parts = parts[0].split("P");
 		pID = Integer.parseInt(parts[1]);
 	}
 
-	// Algorithm to find a free frame to put a frame or clear one to use
-	private void lruImplementation() {
+	/**
+	 * The Least Recently Used algorithm for page replacement is implemented by
+	 * having each page frame table entry have a bit set for keeping track of
+	 * how recently used it is. It is implemented with a pointer to the next
+	 * spot in physical memory to be checked where if it is empty, place the
+	 * request there. If the position isn’t and the LRU bit is set to true, then
+	 * set it to false and move to the next spot; if it is set to false, then
+	 * clear the victim process’ page accordingly and place the new request in
+	 * that spot.
+	 */
+	private static void lruImplementation() {
 		if (pageTable[pID].pagesFrame[pageRef] != -1) { // Already Paged
 			frameTable[pageTable[pID].pagesFrame[pageRef]].recentlyUsed = true;
 			processInfo[pID].nonPageFaults++;
@@ -191,8 +223,16 @@ public class LRUSim {
 		}
 	}
 
-	// Takes the given spot and updates the frame table & process page table
-	private void updatePageFrameTable(int pointer) {
+	/**
+	 * Takes the given location pointer to update the physical memory page to
+	 * the new process and page. It sets victim information for display use and
+	 * also sets a boolean for the simulation to know when it's had a page fault
+	 * occur.
+	 * 
+	 * @param pointer
+	 *            The physical memory location to update
+	 */
+	private static void updatePageFrameTable(int pointer) {
 		faulted = true;
 		victimPID = frameTable[pointer].procId;
 		victimRef = frameTable[pointer].pageRef;
@@ -202,10 +242,87 @@ public class LRUSim {
 		pageTable[pID].pagesFrame[pageRef] = pointer;
 		processInfo[pID].pageFaults++;
 	}
+
+	/**
+	 * Used for telling when the simulation has read all available lines of
+	 * input.
+	 * 
+	 * @return true if simulation has read all the lines in the input file,
+	 *         false if not
+	 */
+	public boolean isDone() {
+		return done;
+	}
+
+	/**
+	 * Gives the value of the victim process id for the display to use.
+	 * 
+	 * @return The victim process id.
+	 */
+	public int getVictimPID() {
+		return victimPID;
+	}
+
+	/**
+	 * Gives the value of the victim process page reference for the display to
+	 * use.
+	 * 
+	 * @return The victim page.
+	 */
+	public int getVictimRef() {
+		return victimRef;
+	}
+
+	/**
+	 * Returns the current process ID to be displayed.
+	 * 
+	 * @return The current process ID.
+	 */
+	public int getpID() {
+		return pID;
+	}
+
+	/**
+	 * Returns the current page to be displayed.
+	 * 
+	 * @return The current page being referenced.
+	 */
+	public int getPageRef() {
+		return pageRef;
+	}
+
+	/**
+	 * Used to get current structure data for display purposes.
+	 * 
+	 * @return The processInfo Record data structure.
+	 */
+	public Records[] getProcessInfo() {
+		return processInfo;
+	}
+
+	/**
+	 * Used to get current page tables for every process to display.
+	 * 
+	 * @return The PageTable data structure.
+	 */
+	public PageTable[] getPageTable() {
+		return pageTable;
+	}
+
+	/**
+	 * Used to get current Page Frame Table (physical memory) data to display.
+	 * 
+	 * @return The PageFrameTable data structure.
+	 */
+	public PageFrameTable[] getFrameTable() {
+		return frameTable;
+	}
+
 }
 
 class Records {
-	// If the pages number is greater than or equal this, make this pageNum + 1;
+	// If the pages number is greater than or equal than totalPages, make it
+	// pageRef + 1;
 	public int totalPages = 0;
 	public int memRefs = 0;
 	public int pageFaults = 0;

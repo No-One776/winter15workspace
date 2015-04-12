@@ -19,7 +19,8 @@ public class LRUSimGUI {
 	private JFrame mainFrame;
 	private JTable frameTable, pageTable, recordsTable;
 	private JLabel lblProcessAccessing, lblProcess, lblVictim;
-	private LRUSim sim = new LRUSim("input.txt");
+	private JButton btnNext, btnNextFault, btnRunToEnd;
+	private static LRUSim sim;
 	private String[] tableNames = { "Page #", "Frame #" };
 	private Object[][] pageData = new Object[16][2];
 	private String[] columnNames = { "Frame #", "ProcID", "Page #" };
@@ -30,8 +31,14 @@ public class LRUSimGUI {
 
 	/**
 	 * Launch the application.
+	 * 
+	 * @param args
+	 *            Unused arguments for the simulation as the input file to use
+	 *            is defined.
 	 */
 	public static void main(String[] args) {
+		if (args.length > 0)
+			sim = new LRUSim(args[0]);
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -51,13 +58,16 @@ public class LRUSimGUI {
 		initialize();
 	}
 
-	// TODO: have this update the display on end & victim page
+	/**
+	 * Update the contents of the display by getting the data from the
+	 * simulation engine.
+	 */
 	public void updateDisplay() {
 		lblProcessAccessing.setText("Process #" + sim.getpID()
 				+ " accessing the new Page #" + sim.getPageRef());
 		lblProcess.setText("Process #" + sim.getpID() + "'s Page Table");
-		lblVictim.setText("           Victim Page: Process " + sim.getVictimPID()
-				+ "'s Page #" + sim.getVictimRef());
+		lblVictim.setText("           Victim Page: Process "
+				+ sim.getVictimPID() + "'s Page #" + sim.getVictimRef());
 		Records[] r = sim.getProcessInfo();
 		PageTable[] p = sim.getPageTable();
 		PageFrameTable[] f = sim.getFrameTable();
@@ -77,20 +87,27 @@ public class LRUSimGUI {
 			recordData[off][4] = r[x].nonPageFaults;
 		}
 		recordsTable.updateUI();
+		if (sim.isDone()) {
+			btnNext.setEnabled(false);
+			btnNextFault.setEnabled(false);
+			btnRunToEnd.setEnabled(false);
+		}
 	}
 
 	/**
-	 * Initialize the contents of the frame.
+	 * Initialize the contents of the frame. Installs eventHandlers to the
+	 * buttons to run the matching simulation methods.
 	 */
 	private void initialize() {
 		mainFrame = new JFrame();
 		mainFrame.setBounds(100, 100, 770, 400);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		/* Buttons to control the simulation */
 		JPanel buttonPanel = new JPanel();
 		mainFrame.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
-		JButton btnNext = new JButton("Run Next");
+		btnNext = new JButton("Run Next");
 		btnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				sim.runNextLine();
@@ -99,7 +116,7 @@ public class LRUSimGUI {
 		});
 		buttonPanel.add(btnNext);
 
-		JButton btnNextFault = new JButton("Run to Next Fault");
+		btnNextFault = new JButton("Run to Next Fault");
 		btnNextFault.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				sim.runTillNextFault();
@@ -108,7 +125,7 @@ public class LRUSimGUI {
 		});
 		buttonPanel.add(btnNextFault);
 
-		JButton btnRunToEnd = new JButton("Run to End");
+		btnRunToEnd = new JButton("Run to End");
 		btnRunToEnd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				sim.runTillEnd();
@@ -123,8 +140,8 @@ public class LRUSimGUI {
 		lblProcessAccessing = new JLabel("Process #" + sim.getpID()
 				+ " accessing Page #" + sim.getPageRef());
 		northPanel.add(lblProcessAccessing);
-		lblVictim = new JLabel("           Victim Page: Process " + sim.getVictimPID()
-				+ "'s Page #" + sim.getVictimRef());
+		lblVictim = new JLabel("           Victim Page: Process "
+				+ sim.getVictimPID() + "'s Page #" + sim.getVictimRef());
 		northPanel.add(lblVictim);
 
 		/* Center Panel for displaying current table info */
@@ -156,5 +173,5 @@ public class LRUSimGUI {
 			recordData[x - 1][0] = x;
 		recordsTable = new JTable(recordData, recordNames);
 		tablePanel.add(new JScrollPane(recordsTable), "3, 1, center,center");
-			}
+	}
 }

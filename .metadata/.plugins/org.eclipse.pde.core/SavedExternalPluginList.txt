@@ -1,4 +1,4 @@
-# List of external plug-in models previously loaded. Timestamp: 1428606382053
+# List of external plug-in models previously loaded. Timestamp: 1428776832843
 file:/C:/Eclipse/plugins/com.android.ide.eclipse.adt_23.0.6.1720515.jar
 file:/C:/Eclipse/plugins/com.android.ide.eclipse.base_23.0.6.1720515.jar
 file:/C:/Eclipse/plugins/com.android.ide.eclipse.ddms_23.0.6.1720515.jar
