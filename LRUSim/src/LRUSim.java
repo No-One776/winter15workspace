@@ -5,7 +5,9 @@ import java.io.IOException;
 
 /**
  * A simulation system that uses memory management and page replacement to
- * implement virtual memory with demand paging page replacement.
+ * implement virtual memory with demand paging page replacement. This system
+ * implements a Least Recently Used replacement algorithm similar to the clock
+ * method of implementation.
  * 
  * @author rohrj
  * @version 1.0
@@ -22,8 +24,7 @@ public class LRUSim {
 	private static int pageRef = 0;
 	private static int victimPID = -1;
 	private static int victimRef = -1;
-	private static boolean faulted = false;
-	private static boolean done = false;
+	private static boolean faulted = false, done = false, notGUI = true;
 
 	/**
 	 * Constructor that initializes the program with the given String fileName
@@ -33,6 +34,7 @@ public class LRUSim {
 	 *            The name of the file to read from.
 	 */
 	public LRUSim(String fileName) {
+		notGUI = false;
 		initialize(fileName);
 	}
 
@@ -100,9 +102,9 @@ public class LRUSim {
 			System.out.print("Process #" + x + " Total Page Size: "
 					+ processInfo[x].totalPages + "\tTotal Memory References: "
 					+ processInfo[x].memRefs);
-			System.out.print("\tTotal Page Faults for P" + x + ": "
+			System.out.print("\tTotal Page Faults: "
 					+ processInfo[x].pageFaults);
-			System.out.println("\tTotal Non-Page Faults for P" + x + ": "
+			System.out.println("\tTotal Non-Page Faults: "
 					+ processInfo[x].nonPageFaults);
 		}
 
@@ -146,6 +148,8 @@ public class LRUSim {
 		} catch (FileNotFoundException e) {
 			System.out.println("Error Creating Read File...");
 		}
+		if (fileToRead == null)
+			System.exit(0);
 		// Instantiate Arrays for use
 		for (int r = 0; r < numProcesses; r++) {
 			processInfo[r] = new Records();
@@ -163,7 +167,8 @@ public class LRUSim {
 	 * processes total page size and the number of memory references.
 	 */
 	private static void storeRecords() {
-		System.out.println("P" + pID + " accessing page #" + pageRef);
+		if (notGUI)
+			System.out.println("P" + pID + " accessing page #" + pageRef);
 		if (pageRef >= processInfo[pID].totalPages)
 			processInfo[pID].totalPages = pageRef + 1;
 		processInfo[pID].memRefs++;
@@ -209,16 +214,18 @@ public class LRUSim {
 					pageTable[frameTable[framePointer].procId].pagesFrame[frameTable[framePointer].pageRef] = -1;
 					updatePageFrameTable(framePointer);
 					notPlaced = false;
-					System.out
-							.println("No free frames, replacing physical page at: "
-									+ framePointer);
+					if (notGUI)
+						System.out
+								.println("No free frames, replacing physical page at: "
+										+ framePointer);
 				} else if (frameTable[framePointer].recentlyUsed)
 					frameTable[framePointer].recentlyUsed = false;
 				framePointer++;
 				if (framePointer == physicalMemSize)
 					framePointer = 0;
 			}
-			printStatus(pID);
+			if (notGUI)
+				printStatus(pID);
 
 		}
 	}
@@ -250,7 +257,7 @@ public class LRUSim {
 	 * @return true if simulation has read all the lines in the input file,
 	 *         false if not
 	 */
-	public boolean isDone() {
+	public static boolean isDone() {
 		return done;
 	}
 
@@ -259,7 +266,7 @@ public class LRUSim {
 	 * 
 	 * @return The victim process id.
 	 */
-	public int getVictimPID() {
+	public static int getVictimPID() {
 		return victimPID;
 	}
 
@@ -269,7 +276,7 @@ public class LRUSim {
 	 * 
 	 * @return The victim page.
 	 */
-	public int getVictimRef() {
+	public static int getVictimRef() {
 		return victimRef;
 	}
 
@@ -278,7 +285,7 @@ public class LRUSim {
 	 * 
 	 * @return The current process ID.
 	 */
-	public int getpID() {
+	public static int getpID() {
 		return pID;
 	}
 
@@ -287,7 +294,7 @@ public class LRUSim {
 	 * 
 	 * @return The current page being referenced.
 	 */
-	public int getPageRef() {
+	public static int getPageRef() {
 		return pageRef;
 	}
 
@@ -296,7 +303,7 @@ public class LRUSim {
 	 * 
 	 * @return The processInfo Record data structure.
 	 */
-	public Records[] getProcessInfo() {
+	public static Records[] getProcessInfo() {
 		return processInfo;
 	}
 
@@ -305,7 +312,7 @@ public class LRUSim {
 	 * 
 	 * @return The PageTable data structure.
 	 */
-	public PageTable[] getPageTable() {
+	public static PageTable[] getPageTable() {
 		return pageTable;
 	}
 
@@ -314,7 +321,7 @@ public class LRUSim {
 	 * 
 	 * @return The PageFrameTable data structure.
 	 */
-	public PageFrameTable[] getFrameTable() {
+	public static PageFrameTable[] getFrameTable() {
 		return frameTable;
 	}
 
